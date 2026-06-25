@@ -608,7 +608,11 @@ public class KawaCompileTask extends DefaultTask {
         if (files == null) return;
         for (File f : files) {
             if (f.isDirectory()) collectScmFiles(f, out);
-            else if (f.getName().endsWith(".scm")) out.add(f);
+            else if (f.getName().endsWith(".scm")
+                     && !f.getName().startsWith(".#")   // Emacs lock files
+                     && !f.getName().startsWith("#")    // Emacs auto-save
+                     && !f.getName().endsWith("~"))     // backup files
+                out.add(f);
         }
     }
 }

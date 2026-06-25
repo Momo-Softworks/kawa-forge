@@ -64,30 +64,27 @@ public class KawaForgePlugin implements Plugin<Project> {
         // ---- kawaRepl task ----
         int standalonePort = ext.getRepl().getStandalonePort();
         if (standalonePort > 0) {
-            // Geiser runtime for intellisense (resolved from kawa-runtime repo).
-            Configuration geiserConfig = project.getConfigurations().create("geiserRuntime");
-            geiserConfig.setDescription("Geiser Kawa support for REPL intellisense");
-            try {
-                project.getDependencies().add(geiserConfig.getName(),
-                    "com.momosoftworks.kawa:geiser-kawa-runtime:0.1.0");
-            } catch (Exception ignored) {
-                // Not available — REPL works without intellisense.
-            }
-
             project.getTasks().register("kawaRepl", org.gradle.api.tasks.JavaExec.class, task -> {
                 task.setDescription("Start a Kawa REPL with the mod's full classpath");
                 task.setGroup("development");
-                // Use the geiser-enabled entry point if available, fall back to plain kawa.repl.
                 task.getMainClass().set("kawa.repl");
-                task.setClasspath(mainSourceSet.getRuntimeClasspath()
-                    .plus(project.files(schemeOutputDir))
-                    .plus(geiserConfig));
                 task.args("--server", String.valueOf(standalonePort));
                 task.setStandardInput(System.in);
-                // If the geiser jar is available, use its entry point for completions.
-                if (!geiserConfig.isEmpty()) {
-                    task.getMainClass().set("kawageiser.StartKawaWithGeiserSupport");
-                }
+
+                task.doFirst(spec -> {
+                    org.gradle.api.file.FileCollection cp = mainSourceSet.getRuntimeClasspath()
+                        .plus(project.files(schemeOutputDir));
+                    // Try to add geiser-kawa runtime for completions.
+                    try {
+                        project.getDependencies().add("kawaRuntime",
+                            "com.momosoftworks.kawa:geiser-kawa-runtime:0.1.0");
+                        cp = cp.plus(project.getConfigurations().getByName("kawaRuntime"));
+                        task.getMainClass().set("kawageiser.StartKawaWithGeiserSupport");
+                    } catch (Exception ignored) {
+                        // geiser not available — bare REPL without completions.
+                    }
+                    ((org.gradle.api.tasks.JavaExec) spec).setClasspath(cp);
+                });
             });
         }
     }
