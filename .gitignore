@@ -1,0 +1,12 @@
+# Gradle
+.gradle/
+build/
+
+# Guix / direnv
+.direnv/
+.envrc.local
+
+# IDE
+.idea/
+.vscode/
+*.iml
