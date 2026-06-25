@@ -70,21 +70,16 @@ public class KawaForgePlugin implements Plugin<Project> {
                 task.getMainClass().set("kawa.repl");
                 task.args("--server", String.valueOf(standalonePort));
                 task.setStandardInput(System.in);
-
-                task.doFirst(spec -> {
-                    org.gradle.api.file.FileCollection cp = mainSourceSet.getRuntimeClasspath()
-                        .plus(project.files(schemeOutputDir));
-                    // Try to add geiser-kawa runtime for completions.
-                    try {
-                        project.getDependencies().add("kawaRuntime",
-                            "com.momosoftworks.kawa:geiser-kawa-runtime:0.1.0");
-                        cp = cp.plus(project.getConfigurations().getByName("kawaRuntime"));
-                        task.getMainClass().set("kawageiser.StartKawaWithGeiserSupport");
-                    } catch (Exception ignored) {
-                        // geiser not available — bare REPL without completions.
-                    }
-                    ((org.gradle.api.tasks.JavaExec) spec).setClasspath(cp);
-                });
+                // compileClasspath has everything; runtimeClasspath triggers tasks.
+                task.setClasspath(project.getConfigurations().getByName("compileClasspath")
+                    .plus(project.files(schemeOutputDir)));
+                try {
+                    project.getDependencies().add("kawaRuntime",
+                        "com.momosoftworks.kawa:geiser-kawa-runtime:0.1.0");
+                    task.setClasspath(task.getClasspath()
+                        .plus(project.getConfigurations().getByName("kawaRuntime")));
+                    task.getMainClass().set("kawageiser.StartKawaWithGeiserSupport");
+                } catch (Exception ignored) {}
             });
         }
     }
