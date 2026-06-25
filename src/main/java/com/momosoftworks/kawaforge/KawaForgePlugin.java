@@ -77,12 +77,17 @@ public class KawaForgePlugin implements Plugin<Project> {
             project.getTasks().register("kawaRepl", org.gradle.api.tasks.JavaExec.class, task -> {
                 task.setDescription("Start a Kawa REPL with the mod's full classpath");
                 task.setGroup("development");
+                // Use the geiser-enabled entry point if available, fall back to plain kawa.repl.
                 task.getMainClass().set("kawa.repl");
                 task.setClasspath(mainSourceSet.getRuntimeClasspath()
                     .plus(project.files(schemeOutputDir))
                     .plus(geiserConfig));
                 task.args("--server", String.valueOf(standalonePort));
                 task.setStandardInput(System.in);
+                // If the geiser jar is available, use its entry point for completions.
+                if (!geiserConfig.isEmpty()) {
+                    task.getMainClass().set("kawageiser.StartKawaWithGeiserSupport");
+                }
             });
         }
     }
