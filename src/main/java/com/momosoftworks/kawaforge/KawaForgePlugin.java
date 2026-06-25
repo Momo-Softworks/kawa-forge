@@ -64,12 +64,23 @@ public class KawaForgePlugin implements Plugin<Project> {
         // ---- kawaRepl task ----
         int standalonePort = ext.getRepl().getStandalonePort();
         if (standalonePort > 0) {
+            // Geiser runtime for intellisense (resolved from kawa-runtime repo).
+            Configuration geiserConfig = project.getConfigurations().create("geiserRuntime");
+            geiserConfig.setDescription("Geiser Kawa support for REPL intellisense");
+            try {
+                project.getDependencies().add(geiserConfig.getName(),
+                    "com.momosoftworks.kawa:geiser-kawa-runtime:0.1.0");
+            } catch (Exception ignored) {
+                // Not available — REPL works without intellisense.
+            }
+
             project.getTasks().register("kawaRepl", org.gradle.api.tasks.JavaExec.class, task -> {
                 task.setDescription("Start a Kawa REPL with the mod's full classpath");
                 task.setGroup("development");
                 task.getMainClass().set("kawa.repl");
                 task.setClasspath(mainSourceSet.getRuntimeClasspath()
-                    .plus(project.files(schemeOutputDir)));
+                    .plus(project.files(schemeOutputDir))
+                    .plus(geiserConfig));
                 task.args("--server", String.valueOf(standalonePort));
                 task.setStandardInput(System.in);
             });
