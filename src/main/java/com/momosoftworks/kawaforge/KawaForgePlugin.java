@@ -82,8 +82,9 @@ public class KawaForgePlugin implements Plugin<Project> {
                 } catch (Exception ignored) {}
 
                 if (hasGeiser) {
-                    task.getMainClass().set("kawageiser.StartKawaWithGeiserSupport");
-                    task.args(String.valueOf(standalonePort));
+                    task.getMainClass().set("kawa.repl");
+                    task.args("--server", String.valueOf(standalonePort),
+                              "-e", "(require <kawageiser.Geiser>)");
                 } else {
                     task.getMainClass().set("kawa.repl");
                     task.args("--server", String.valueOf(standalonePort));
