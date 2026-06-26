@@ -71,21 +71,16 @@ public class KawaForgePlugin implements Plugin<Project> {
                 task.setClasspath(project.getConfigurations().getByName("compileClasspath")
                     .plus(project.files(schemeOutputDir)));
 
-                // If geiser-kawa runtime is available, use its entry point for completions.
-                boolean hasGeiser = false;
-                try {
-                    project.getDependencies().add("kawaRuntime",
-                        "com.momosoftworks.kawa:geiser-kawa-runtime:0.1.0");
-                    task.setClasspath(task.getClasspath()
-                        .plus(project.getConfigurations().getByName("kawaRuntime")));
-                    hasGeiser = true;
-                } catch (Exception ignored) {}
+                // Resolve geiser-kawa v2 scheme sources (pure Scheme, no Java middleware).
+                File geiserSchemeDir = resolveGeiserKawaSchemeDir(project);
 
-                if (hasGeiser) {
-                    task.getMainClass().set("kawageiser.StartKawaWithGeiserSupport");
-                    task.args(String.valueOf(standalonePort));
+                task.getMainClass().set("kawa.repl");
+                if (geiserSchemeDir != null) {
+                    task.args("-Dkawa.import.path=" + geiserSchemeDir.getAbsolutePath(),
+                              "-e", "(import (geiser emacs))",
+                              "-s",
+                              "--server", String.valueOf(standalonePort));
                 } else {
-                    task.getMainClass().set("kawa.repl");
                     task.args("--server", String.valueOf(standalonePort));
                 }
             });
@@ -127,6 +122,73 @@ public class KawaForgePlugin implements Plugin<Project> {
                 repo.setUrl("https://raw.githubusercontent.com/Momo-Softworks/kawa-runtime/main/");
                 repo.metadataSources(ms -> ms.artifact());
             });
+        }
+    }
+
+    /**
+     * Resolve the geiser-kawa v2 scheme source directory.
+     * Tries Guix first, then local checkout, then project-local.
+     */
+    private File resolveGeiserKawaSchemeDir(Project project) {
+        // 1. Guix: guix build geiser-kawa
+        File guixDir = resolveGuixGeiserKawaDir(project);
+        if (guixDir != null) return guixDir;
+
+        // 2. Local checkout
+        File localCheckout = new File(System.getProperty("user.home"),
+            "Projects/geiser-kawa/src");
+        if (new File(localCheckout, "geiser/emacs.scm").exists()) {
+            project.getLogger().lifecycle("  geiser-kawa scheme: " + localCheckout);
+            return localCheckout;
+        }
+
+        // 3. Project-local libs/geiser-kawa-scheme/
+        File projectLocal = project.file("libs/geiser-kawa-scheme");
+        if (new File(projectLocal, "geiser/emacs.scm").exists()) {
+            project.getLogger().lifecycle("  geiser-kawa scheme: " + projectLocal);
+            return projectLocal;
+        }
+
+        project.getLogger().warn("kawa-forge: geiser-kawa v2 scheme sources not found; "
+            + "REPL will start without completions/autodoc");
+        return null;
+    }
+
+    private File resolveGuixGeiserKawaDir(Project project) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("guix", "build", "geiser-kawa",
+                "-L", System.getProperty("user.home") + "/.config/guix/modules");
+            pb.redirectErrorStream(true);
+            Process proc = pb.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+            StringBuilder output = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) output.append(line).append('\n');
+            int exit = proc.waitFor();
+            if (exit != 0) return null;
+
+            // Find the store path in output
+            String storePath = null;
+            for (String l : output.toString().split("\n")) {
+                String t = l.trim();
+                if (t.startsWith("/gnu/store/")) storePath = t;
+            }
+            if (storePath == null) return null;
+
+            // The scheme sources are at <store>/share/emacs/site-lisp/<pkg>/src/
+            File siteLisp = new File(storePath, "share/emacs/site-lisp");
+            File[] pkgDirs = siteLisp.listFiles(
+                (dir, name) -> name.startsWith("geiser-kawa-"));
+            if (pkgDirs == null || pkgDirs.length == 0) return null;
+
+            File srcDir = new File(pkgDirs[0], "src");
+            if (new File(srcDir, "geiser/emacs.scm").exists()) {
+                project.getLogger().lifecycle("  geiser-kawa scheme (guix): " + srcDir);
+                return srcDir;
+            }
+            return null;
+        } catch (Exception e) {
+            return null;
         }
     }
 
