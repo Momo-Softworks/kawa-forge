@@ -1,0 +1,60 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.momosoftworks",
+    "module": "kawa-forge-gradle",
+    "version": "0.2.0",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.3.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "files": [
+        {
+          "name": "kawa-forge-gradle-0.2.0.jar",
+          "url": "kawa-forge-gradle-0.2.0.jar",
+          "size": 30790,
+          "sha512": "10d2a51da6082c4d6044fa94c43771ca62ddcd9f182e869b82e37790853cd778eba27912ce06f4f1bb8ef96ff57aff64925d1a113061b9fd6964d9281b8e4e39",
+          "sha256": "df12171144b8cea5407388cc51ba0f4a1e843efaa1fb936f3cae370fd70171fe",
+          "sha1": "c3ce1894e6c306ee43a028dd8089cdef55b1935f",
+          "md5": "0a435d6236a460002e688a29f91b0f71"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "kawa-forge-gradle-0.2.0.jar",
+          "url": "kawa-forge-gradle-0.2.0.jar",
+          "size": 30790,
+          "sha512": "10d2a51da6082c4d6044fa94c43771ca62ddcd9f182e869b82e37790853cd778eba27912ce06f4f1bb8ef96ff57aff64925d1a113061b9fd6964d9281b8e4e39",
+          "sha256": "df12171144b8cea5407388cc51ba0f4a1e843efaa1fb936f3cae370fd70171fe",
+          "sha1": "c3ce1894e6c306ee43a028dd8089cdef55b1935f",
+          "md5": "0a435d6236a460002e688a29f91b0f71"
+        }
+      ]
+    }
+  ]
+}
