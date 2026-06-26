@@ -78,7 +78,6 @@ public class KawaForgePlugin implements Plugin<Project> {
                 if (geiserSchemeDir != null) {
                     task.args("-Dkawa.import.path=" + geiserSchemeDir.getAbsolutePath(),
                               "-e", "(import (geiser emacs))",
-                              "-s",
                               "--server", String.valueOf(standalonePort));
                 } else {
                     task.args("--server", String.valueOf(standalonePort));
