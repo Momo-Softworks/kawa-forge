@@ -27,11 +27,11 @@
         {
           "name": "kawa-forge-gradle-0.1.0.jar",
           "url": "kawa-forge-gradle-0.1.0.jar",
-          "size": 23913,
-          "sha512": "408b93fbdf1d7ca34286b12325a956766ddceb3f3da17e32636a8cf10568fd970dc526590b0628efee940cc8379b5463c5380782be9bc0e76b0d8c74f0a2641f",
-          "sha256": "831aa8aa6ad4f145b5614b1184f8fb94d81e6b2b6cf2e63ac1099e6f824cd220",
-          "sha1": "36ad98ee068b31a22b51b927f81ca72af2ea0206",
-          "md5": "6db5ac983bc04bef97b96d2c115a0d91"
+          "size": 23895,
+          "sha512": "0b1d9fe48df387f45176a309c01d85f861ec14718248c13de2fce6560d001a4502f33203f398e56f3f3fbeeafda24f499a3b78d98d667804f26ce3b2a6a35364",
+          "sha256": "967fa3436585d918678818d03bf7d5c4361e7d111020a29cc52491f49a53337b",
+          "sha1": "414eabc11b31764bf1112e3279c3f5f59bfea48c",
+          "md5": "d5b9f3d7f6dee0ebf4cc88547121c377"
         }
       ]
     },
@@ -48,11 +48,11 @@
         {
           "name": "kawa-forge-gradle-0.1.0.jar",
           "url": "kawa-forge-gradle-0.1.0.jar",
-          "size": 23913,
-          "sha512": "408b93fbdf1d7ca34286b12325a956766ddceb3f3da17e32636a8cf10568fd970dc526590b0628efee940cc8379b5463c5380782be9bc0e76b0d8c74f0a2641f",
-          "sha256": "831aa8aa6ad4f145b5614b1184f8fb94d81e6b2b6cf2e63ac1099e6f824cd220",
-          "sha1": "36ad98ee068b31a22b51b927f81ca72af2ea0206",
-          "md5": "6db5ac983bc04bef97b96d2c115a0d91"
+          "size": 23895,
+          "sha512": "0b1d9fe48df387f45176a309c01d85f861ec14718248c13de2fce6560d001a4502f33203f398e56f3f3fbeeafda24f499a3b78d98d667804f26ce3b2a6a35364",
+          "sha256": "967fa3436585d918678818d03bf7d5c4361e7d111020a29cc52491f49a53337b",
+          "sha1": "414eabc11b31764bf1112e3279c3f5f59bfea48c",
+          "md5": "d5b9f3d7f6dee0ebf4cc88547121c377"
         }
       ]
     }
