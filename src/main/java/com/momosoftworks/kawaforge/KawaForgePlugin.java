@@ -38,6 +38,9 @@ public class KawaForgePlugin implements Plugin<Project> {
         project.getConfigurations().getByName("compileClasspath").extendsFrom(kawaConfig);
         project.getConfigurations().getByName("runtimeClasspath").extendsFrom(kawaConfig);
 
+        // Resolve mixin carrier annotations from the same repositories as the plugin (mavenLocal during development).
+        project.getDependencies().add("compileOnly", "com.momosoftworks:kawa-mixin-annotations:0.2.0");
+
         // ---- Source / output ----
         File schemeSourceDir = project.file(ext.getSourceDir());
         org.gradle.api.provider.Provider<org.gradle.api.file.Directory> schemeOutputDir =
@@ -65,11 +68,24 @@ public class KawaForgePlugin implements Plugin<Project> {
                 });
             });
 
+        // ---- processKawaMixins task ----
+        org.gradle.api.provider.Provider<org.gradle.api.file.Directory> processedOutputDir =
+            project.getLayout().getBuildDirectory().dir("classes/kawaMixin/main");
+        TaskProvider<com.momosoftworks.kawaforge.mixin.KawaMixinProcessTask> processKawaMixins = project.getTasks().register(
+            "processKawaMixins", com.momosoftworks.kawaforge.mixin.KawaMixinProcessTask.class, task -> {
+                task.setDescription("Materialize Mixin annotations from Kawa carrier payloads into compiled classes");
+                task.setGroup("build");
+                task.getInputClassesDir().set(schemeOutputDir);
+                task.getOutputClassesDir().set(processedOutputDir);
+                task.getDefinitionClasspath().from(project.getConfigurations().getByName("compileClasspath"));
+                task.dependsOn(compileKawa);
+            });
+
         // ---- Wire into main ----
         mainSourceSet.getOutput().dir(
-            java.util.Collections.singletonMap("builtBy", compileKawa),
-            schemeOutputDir);
-        project.getTasks().getByName("compileJava").dependsOn(compileKawa);
+            java.util.Collections.singletonMap("builtBy", processKawaMixins),
+            processedOutputDir);
+        project.getTasks().getByName("compileJava").dependsOn(processKawaMixins);
 
         // ---- Pick the best classpath provider ----
         final MinecraftClasspathProvider minecraftProvider;
