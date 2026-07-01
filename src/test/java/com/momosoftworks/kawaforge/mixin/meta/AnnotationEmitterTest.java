@@ -69,6 +69,21 @@ public class AnnotationEmitterTest {
         Assertions.assertEquals(input, output);
     }
 
+    @Test
+    public void testEmptyArrayRoundTrip() {
+        // targets is String[], empty array in Kawa payload
+        // Since we cannot use PayloadReader to create an empty array (it requires at least one value),
+        // we construct the VAnnotation manually.
+        VAnnotation input = new VAnnotation("Lcom/momosoftworks/kawaforge/mixin/meta/fixtures/FixtureMixin;", 
+            new LinkedHashMap<>(Map.of("targets", new VArray(new ArrayList<>()))), true);
+        
+        // Normalizer usually converts dotted names to descriptors. Since we provide the descriptor, 
+        // we bypass Normalizer for the input to test the Emitter and Reader.
+        VAnnotation output = roundTripClass(input);
+        Assertions.assertEquals(input, output);
+        Assertions.assertTrue(((VArray) output.members.get("targets")).values.isEmpty());
+    }
+
     private VAnnotation roundTripClass(VAnnotation ann) {
         ClassWriter cw = new ClassWriter(0);
         ClassVisitor cv = new ClassVisitor(Opcodes.ASM9, cw) {

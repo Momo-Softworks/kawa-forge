@@ -105,4 +105,74 @@ public class MixinClassProcessorTest {
         Assertions.assertTrue(ex.getMessage().contains(className));
         Assertions.assertTrue(ex.getMessage().contains("(@"));
     }
+
+    @Test
+    public void testMultipleClassAnnotations() throws IOException, URISyntaxException {
+        String className = "test/MultiAnn";
+        String classPayload = "(@ com.momosoftworks.kawaforge.mixin.meta.fixtures.FixtureMixin (targets \"a.B\")) (@ com.momosoftworks.kawaforge.mixin.meta.fixtures.FixtureScalars (c #\\x))";
+        
+        byte[] bytes = synthesizeClass(className, true, classPayload, null, false, null);
+        Path testClassesDir = Paths.get(FixtureMixin.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+        MixinClassProcessor processor = new MixinClassProcessor(Collections.singletonList(testClassesDir));
+        
+        byte[] result = processor.process(bytes);
+        ClassReader cr = new ClassReader(result);
+        
+        final boolean[] foundMixin = {false};
+        final boolean[] foundScalars = {false};
+        cr.accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+                if (desc.equals("Lcom/momosoftworks/kawaforge/mixin/meta/fixtures/FixtureMixin;")) foundMixin[0] = true;
+                if (desc.equals("Lcom/momosoftworks/kawaforge/mixin/meta/fixtures/FixtureScalars;")) foundScalars[0] = true;
+                return super.visitAnnotation(desc, visible);
+            }
+        }, 0);
+        
+        Assertions.assertTrue(foundMixin[0]);
+        Assertions.assertTrue(foundScalars[0]);
+    }
+
+    @Test
+    public void testFieldKawaMemberMeta() throws IOException, URISyntaxException {
+        String className = "test/FieldMeta";
+        String methodPayload = "(@ com.momosoftworks.kawaforge.mixin.meta.fixtures.FixtureMixin (targets \"a.B\"))";
+        
+        // synthesizeClass currently only handles methods. I need to add field support to it or manually build the class.
+        ClassWriter cw = new ClassWriter(0);
+        cw.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC, className, null, "java/lang/Object", null);
+        
+        FieldVisitor fv = cw.visitField(Opcodes.ACC_PUBLIC, "metaField", "Lcom/momosoftworks/kawaforge/mixin/KawaMemberMeta;", null, null);
+        AnnotationVisitor av = fv.visitAnnotation("Lcom/momosoftworks/kawaforge/mixin/KawaMemberMeta;", false);
+        av.visit("value", methodPayload);
+        av.visitEnd();
+        fv.visitEnd();
+        cw.visitEnd();
+        
+        byte[] bytes = cw.toByteArray();
+        Path testClassesDir = Paths.get(FixtureMixin.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+        MixinClassProcessor processor = new MixinClassProcessor(Collections.singletonList(testClassesDir));
+        
+        byte[] result = processor.process(bytes);
+        ClassReader cr = new ClassReader(result);
+        
+        final boolean[] foundMixin = {false};
+        final boolean[] foundMeta = {false};
+        cr.accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public FieldVisitor visitField(int access, String name, String descriptor, String signature, Object value) {
+                return new FieldVisitor(Opcodes.ASM9) {
+                    @Override
+                    public AnnotationVisitor visitAnnotation(String adesc, boolean visible) {
+                        if (adesc.equals("Lcom/momosoftworks/kawaforge/mixin/meta/fixtures/FixtureMixin;")) foundMixin[0] = true;
+                        if (adesc.equals("Lcom/momosoftworks/kawaforge/mixin/KawaMemberMeta;")) foundMeta[0] = true;
+                        return super.visitAnnotation(adesc, visible);
+                    }
+                };
+            }
+        }, 0);
+        
+        Assertions.assertTrue(foundMixin[0], "Should have the real annotation");
+        Assertions.assertFalse(foundMeta[0], "Should NOT have the carrier");
+    }
 }

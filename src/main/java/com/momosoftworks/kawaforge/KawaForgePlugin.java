@@ -23,6 +23,8 @@ public class KawaForgePlugin implements Plugin<Project> {
         PROVIDERS.add(new GenericClasspathProvider());
     }
 
+    private static final String ANNOTATIONS_VERSION = "0.2.0"; // keep in lockstep with the root project version until the plugin publishes both together
+
     @Override
     public void apply(Project project) {
         KawaForgeExtension ext = project.getExtensions().create("kawa", KawaForgeExtension.class);
@@ -39,7 +41,7 @@ public class KawaForgePlugin implements Plugin<Project> {
         project.getConfigurations().getByName("runtimeClasspath").extendsFrom(kawaConfig);
 
         // Resolve mixin carrier annotations from the same repositories as the plugin (mavenLocal during development).
-        project.getDependencies().add("compileOnly", "com.momosoftworks:kawa-mixin-annotations:0.2.0");
+        project.getDependencies().add("compileOnly", "com.momosoftworks:kawa-mixin-annotations:" + ANNOTATIONS_VERSION);
 
         // ---- Source / output ----
         File schemeSourceDir = project.file(ext.getSourceDir());
@@ -108,7 +110,7 @@ public class KawaForgePlugin implements Plugin<Project> {
 
                 // Assemble full REPL classpath: main runtime + Kawa output + Minecraft.
                 org.gradle.api.file.FileCollection classpath = mainSourceSet.getRuntimeClasspath()
-                    .plus(project.files(schemeOutputDir))
+                    .plus(project.files(processedOutputDir))
                     .plus(minecraftProvider.replClasspath(project, mainSourceSet));
                 task.setClasspath(classpath.filter(File::exists));
 

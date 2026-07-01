@@ -161,6 +161,37 @@ public class NormalizerTest {
     }
 
     @Test
+    void testScalarNarrowing() {
+        // char: 'x'
+        VAnnotation rawC = new VAnnotation("com.momosoftworks.kawaforge.mixin.meta.fixtures.FixtureScalars", 
+            new LinkedHashMap<>(Map.of("c", new VPrim('x'))), null);
+        VAnnotation normC = normalizer.normalize(rawC);
+        assertEquals(Character.valueOf('x'), ((VPrim) normC.members.get("c")).value);
+
+        // byte: 127 (ok), 128 (fail)
+        VAnnotation rawB1 = new VAnnotation("com.momosoftworks.kawaforge.mixin.meta.fixtures.FixtureScalars", 
+            new LinkedHashMap<>(Map.of("b", new VPrim(127L))), null);
+        VAnnotation normB1 = normalizer.normalize(rawB1);
+        assertEquals(Byte.valueOf((byte)127), ((VPrim) normB1.members.get("b")).value);
+
+        VAnnotation rawB2 = new VAnnotation("com.momosoftworks.kawaforge.mixin.meta.fixtures.FixtureScalars", 
+            new LinkedHashMap<>(Map.of("b", new VPrim(128L))), null);
+        assertThrows(NormalizationException.class, () -> normalizer.normalize(rawB2));
+
+        // long: 1 (boxed to Long)
+        VAnnotation rawL = new VAnnotation("com.momosoftworks.kawaforge.mixin.meta.fixtures.FixtureScalars", 
+            new LinkedHashMap<>(Map.of("l", new VPrim(1L))), null);
+        VAnnotation normL = normalizer.normalize(rawL);
+        assertEquals(Long.valueOf(1L), ((VPrim) normL.members.get("l")).value);
+
+        // float: 1.0 (double literal boxed to Float)
+        VAnnotation rawF = new VAnnotation("com.momosoftworks.kawaforge.mixin.meta.fixtures.FixtureScalars", 
+            new LinkedHashMap<>(Map.of("f", new VPrim(1.0))), null);
+        VAnnotation normF = normalizer.normalize(rawF);
+        assertEquals(Float.valueOf(1.0f), ((VPrim) normF.members.get("f")).value);
+    }
+
+    @Test
     void testUnresolvableAnnotation() {
         VAnnotation raw = new VAnnotation("com.missing.Annotation", new LinkedHashMap<>(), null);
         assertThrows(NormalizationException.class, () -> normalizer.normalize(raw));

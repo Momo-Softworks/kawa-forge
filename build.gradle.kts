@@ -13,6 +13,7 @@ repositories {
 dependencies {
     implementation("org.ow2.asm:asm:9.10.1")
 
+    testImplementation(project(":kawa-mixin-annotations"))
     testImplementation(platform("org.junit:junit-bom:5.10.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
