@@ -5,6 +5,7 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Opcodes;
@@ -49,12 +50,14 @@ public final class MixinConfigGenerator {
             ClassReader reader = new ClassReader(bytes);
             final boolean[] isMixin = {false};
             reader.accept(new ClassVisitor(Opcodes.ASM9) {
-                public void visitAnnotation(int descriptor, boolean visible) {
+                @Override
+                public AnnotationVisitor visitAnnotation(String descriptor, boolean visible) {
                     if ("Lorg/spongepowered/asm/mixin/Mixin;".equals(descriptor)) {
                         isMixin[0] = true;
                     }
+                    return null;
                 }
-            }, 0);
+            }, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
             return isMixin[0];
         } catch (Exception e) {
             return false;

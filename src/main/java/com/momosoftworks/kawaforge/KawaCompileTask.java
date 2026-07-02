@@ -22,7 +22,7 @@ public class KawaCompileTask extends DefaultTask {
         "    (let walk ((f form))\n" +
         "      (cond\n" +
         "       ((pair? f)\n" +
-        "        (when (eq? (car f) '::)\n" +
+        "        (when (and (eq? (car f) '::) (pair? (cdr f)))\n" +
         "          (let ((type-name (cadr f)))\n" +
         "            (when (symbol? type-name)\n" +
         "              (let ((name-str (symbol->string type-name)))\n" +
