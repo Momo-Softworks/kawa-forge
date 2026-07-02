@@ -239,6 +239,11 @@ public class KawaCompileTask extends DefaultTask {
         File replFile = writeReplModule(outDir);
         scmFiles.add(replFile);
 
+        // Include the (kawaforge mixin) DSL module so mods can (import (kawaforge mixin)).
+        // It MUST be compiled in its own process before consumers to avoid lazy-compile macro issues.
+        File mixinDslFile = writeMixinDslModule(outDir);
+        scmFiles.add(mixinDslFile);
+
         if (scmFiles.isEmpty()) return;
 
         String javaBin = System.getProperty("java.home") + "/bin/java";
@@ -600,6 +605,24 @@ public class KawaCompileTask extends DefaultTask {
             return replFile;
         } catch (IOException e) {
             throw new GradleException("Failed to write repl module", e);
+        }
+    }
+
+    private File writeMixinDslModule(File outDir) {
+        try {
+            // Mirror repl module: write to build/tmp/ to keep source out of the jar.
+            File dir = new File(getProject().getBuildDir(), "tmp/kawa-mixin-dsl");
+            dir.mkdirs();
+            File dslFile = new File(dir, "mixin-dsl.scm");
+            
+            // Read the DSL source from the plugin's resources.
+            try (InputStream is = getClass().getResourceAsStream("/kawaforge/mixin.scm")) {
+                if (is == null) throw new IOException("Could not find /kawaforge/mixin.scm in classpath");
+                Files.copy(is, dslFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+            return dslFile;
+        } catch (IOException e) {
+            throw new GradleException("Failed to write mixin DSL module", e);
         }
     }
 

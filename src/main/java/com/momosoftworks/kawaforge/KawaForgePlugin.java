@@ -83,6 +83,36 @@ public class KawaForgePlugin implements Plugin<Project> {
                 task.dependsOn(compileKawa);
             });
 
+        // ---- generateKawaMixinConfig task ----
+        // Registered unconditionally: the extension is not yet configured at
+        // plugin-apply time, so `enabled` must be consulted lazily (onlyIf).
+        // The register callback itself only runs at task realization, i.e.
+        // after the consumer build script has configured the extension.
+        org.gradle.api.provider.Provider<org.gradle.api.file.Directory> generatedResourcesDir =
+            project.getLayout().getBuildDirectory().dir("generated/kawaMixin/resources");
+        TaskProvider<com.momosoftworks.kawaforge.mixin.GenerateKawaMixinConfigTask> generateKawaMixinConfig = project.getTasks().register(
+            "generateKawaMixinConfig", com.momosoftworks.kawaforge.mixin.GenerateKawaMixinConfigTask.class, task -> {
+                task.setDescription("Automatically generate mixins.json for Kawa-authored mixins");
+                task.setGroup("build");
+                task.getProcessedClassesDir().set(processedOutputDir);
+                task.getOutputDir().set(generatedResourcesDir);
+                task.getMixinPackage().set(ext.getMixin().getMixinPackage());
+                task.getRequired().set(ext.getMixin().isRequired());
+                task.getMinVersion().set(ext.getMixin().getMinVersion());
+                task.getCompatibilityLevel().set(ext.getMixin().getCompatibilityLevel());
+
+                String defaultName = "mixins." + project.getName() + ".json";
+                String configName = ext.getMixin().getConfigName().isEmpty() ? defaultName : ext.getMixin().getConfigName();
+                task.getConfigName().set(configName);
+
+                task.onlyIf(t -> ext.getMixin().isEnabled());
+                task.dependsOn(processKawaMixins);
+            });
+
+        mainSourceSet.getOutput().dir(
+            java.util.Collections.singletonMap("builtBy", generateKawaMixinConfig),
+            generatedResourcesDir);
+
         // ---- Wire into main ----
         mainSourceSet.getOutput().dir(
             java.util.Collections.singletonMap("builtBy", processKawaMixins),
