@@ -4,26 +4,19 @@ Write SpongePowered Mixins for Minecraft Forge 1.7.10 in Kawa Scheme. The
 plugin compiles your Scheme, injects the real Mixin annotations into the
 bytecode, and generates the `mixins.<name>.json` config — no Java shims.
 
-## 1. One-time setup (until the plugin is published to a repo)
+## 1. Consumer mod project
 
-```sh
-git clone git@github.com:Momo-Softworks/kawa-forge.git
-cd kawa-forge
-./gradlew publishToMavenLocal
-```
+No cloning required — the plugin is published on the repo's `maven` branch.
 
-Requires any JDK 17+ on PATH (on Guix: `guix shell -m manifest.scm` inside the
-clone). This publishes `com.momosoftworks.kawa-forge` **0.2.0** and
-`com.momosoftworks:kawa-mixin-annotations:0.2.0` to `~/.m2`.
-
-## 2. Consumer mod project
-
-`settings.gradle` — let Gradle find the plugin in mavenLocal:
+`settings.gradle`:
 
 ```groovy
 pluginManagement {
     repositories {
-        mavenLocal()
+        maven {
+            name = 'Kawa Forge'
+            url = 'https://raw.githubusercontent.com/Momo-Softworks/kawa-forge/maven/'
+        }
         gradlePluginPortal()
         // ... your existing plugin repos (RFG etc.)
     }
@@ -34,12 +27,11 @@ pluginManagement {
 
 ```groovy
 plugins {
-    id 'com.momosoftworks.kawa-forge' version '0.2.0'
+    id 'com.momosoftworks.kawa-forge' version '0.3.0'
 }
 
-repositories {
-    mavenLocal() // resolves kawa-mixin-annotations
-}
+// No extra repositories needed: the plugin auto-adds its own maven repo for
+// kawa-mixin-annotations and the Kawa runtime.
 
 kawa {
     mixin {
@@ -61,7 +53,7 @@ dependencies {
 }
 ```
 
-## 3. The mixin, in Scheme
+## 2. The mixin, in Scheme
 
 `src/main/scheme/com/example/mymod/mixin/mixins.scm`:
 
@@ -94,7 +86,7 @@ Notes:
   can be hand-written with carrier annotations per
   [`mixin-payload-spec.md`](mixin-payload-spec.md).
 
-## 4. Build & verify the bytecode
+## 3. Build & verify the bytecode
 
 ```sh
 ./gradlew build
@@ -137,7 +129,7 @@ unzip -p build/libs/<yourmod>.jar mixins.<yourmod>.json
 }
 ```
 
-## 5. Runtime bootstrap (1.7.10-specific — use what your pack already does)
+## 4. Runtime bootstrap (1.7.10-specific — use what your pack already does)
 
 The compile-time side above is fully automated and tested. Getting Mixin to
 *load* the config at runtime is the same as for any Java mixin mod on 1.7.10
@@ -162,7 +154,7 @@ and depends on your environment:
 This half is exactly what the smoke test should confirm — if the config loads
 but Mixin rejects a class, that's a bug in this plugin: please capture the log.
 
-## 6. What success looks like
+## 5. What success looks like
 
 Launch the dev client. Very early in the log (before the main menu):
 
@@ -170,7 +162,13 @@ Launch the dev client. Very early in the log (before the main menu):
 >>> KAWA MIXIN WORKS <<<
 ```
 
-## Known limitations (v0.2.0)
+## Hacking on the plugin itself
+
+Clone the repo, `./gradlew publishToMavenLocal` (JDK 17+; on Guix:
+`guix shell -m manifest.scm`), and put `mavenLocal()` first in the consumer's
+`pluginManagement` repositories.
+
+## Known limitations (v0.3.0)
 
 - Dev-environment (MCP names) only — **no refmap/SRG remapping yet**, so
   production/obfuscated environments won't remap targets. Phase 2.

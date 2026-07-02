@@ -23,7 +23,7 @@ public class KawaForgePlugin implements Plugin<Project> {
         PROVIDERS.add(new GenericClasspathProvider());
     }
 
-    private static final String ANNOTATIONS_VERSION = "0.2.0"; // keep in lockstep with the root project version until the plugin publishes both together
+    private static final String ANNOTATIONS_VERSION = "0.3.0"; // keep in lockstep with the root project version until the plugin publishes both together
 
     @Override
     public void apply(Project project) {
@@ -40,7 +40,10 @@ public class KawaForgePlugin implements Plugin<Project> {
         project.getConfigurations().getByName("compileClasspath").extendsFrom(kawaConfig);
         project.getConfigurations().getByName("runtimeClasspath").extendsFrom(kawaConfig);
 
-        // Resolve mixin carrier annotations from the same repositories as the plugin (mavenLocal during development).
+        // Resolve mixin carrier annotations from the kawa-forge maven branch
+        // (auto-added below, like the kawa-runtime repo); mavenLocal also works
+        // during development.
+        addKawaForgeMavenRepo(project);
         project.getDependencies().add("compileOnly", "com.momosoftworks:kawa-mixin-annotations:" + ANNOTATIONS_VERSION);
 
         // ---- Source / output ----
@@ -327,6 +330,21 @@ public class KawaForgePlugin implements Plugin<Project> {
         // 5. Default: kawa-runtime Maven artifact
         addKawaRuntimeRepo(project);
         return "com.momosoftworks.kawa:kawa-runtime:3.1.1";
+    }
+
+    private void addKawaForgeMavenRepo(Project project) {
+        String name = "Kawa Forge";
+        boolean exists = project.getRepositories().stream().anyMatch(r -> name.equals(r.getName()));
+        if (!exists) {
+            project.getRepositories().maven(repo -> {
+                repo.setName(name);
+                repo.setUrl("https://raw.githubusercontent.com/Momo-Softworks/kawa-forge/maven/");
+                repo.metadataSources(ms -> {
+                    ms.mavenPom();
+                    ms.artifact();
+                });
+            });
+        }
     }
 
     private void addKawaRuntimeRepo(Project project) {

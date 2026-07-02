@@ -20,5 +20,11 @@ publishing {
     }
     repositories {
         mavenLocal()
+        providers.gradleProperty("githubMavenDir").orNull?.let { dir ->
+            maven {
+                name = "githubMaven"
+                url = uri(dir)
+            }
+        }
     }
 }

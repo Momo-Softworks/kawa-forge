@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.momosoftworks"
-version = "0.2.0"
+version = "0.3.0"
 
 repositories {
     mavenCentral()
@@ -36,5 +36,13 @@ gradlePlugin {
 publishing {
     repositories {
         mavenLocal()
+        // Publish to the GitHub-hosted maven branch worktree:
+        //   ./gradlew publishAllPublicationsToGithubMavenRepository -PgithubMavenDir=<worktree>
+        providers.gradleProperty("githubMavenDir").orNull?.let { dir ->
+            maven {
+                name = "githubMaven"
+                url = uri(dir)
+            }
+        }
     }
 }
