@@ -18,6 +18,6 @@ pluginManagement {
 
 // build.gradle.kts
 plugins {
-    id("com.momosoftworks.kawa-forge") version "0.1.0"
+    id("com.momosoftworks.kawa-forge") version "0.3.0"
 }
 ```
