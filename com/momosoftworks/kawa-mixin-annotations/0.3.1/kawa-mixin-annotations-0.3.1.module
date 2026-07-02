@@ -1,0 +1,80 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.momosoftworks",
+    "module": "kawa-mixin-annotations",
+    "version": "0.3.1",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.3.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "files": [
+        {
+          "name": "kawa-mixin-annotations-0.3.1.jar",
+          "url": "kawa-mixin-annotations-0.3.1.jar",
+          "size": 1661,
+          "sha512": "e0cc9ee9e86062476dd917b912bfac992a7e30f496729dd73c0bee0cc6959e273af2b72fbea440c18b8c30ab504cca8913e446a5b561f6993018af918712580f",
+          "sha256": "17abef5a4c064615d945d3ff55b36294c17bb568ad9946c220c94e76616f5ec8",
+          "sha1": "83e8d0de91236d3d299d56920509ef47f012d194",
+          "md5": "1fb90cf5fbce840e7bfb48a1b9685c4d"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "kawa-mixin-annotations-0.3.1.jar",
+          "url": "kawa-mixin-annotations-0.3.1.jar",
+          "size": 1661,
+          "sha512": "e0cc9ee9e86062476dd917b912bfac992a7e30f496729dd73c0bee0cc6959e273af2b72fbea440c18b8c30ab504cca8913e446a5b561f6993018af918712580f",
+          "sha256": "17abef5a4c064615d945d3ff55b36294c17bb568ad9946c220c94e76616f5ec8",
+          "sha1": "83e8d0de91236d3d299d56920509ef47f012d194",
+          "md5": "1fb90cf5fbce840e7bfb48a1b9685c4d"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "kawa-mixin-annotations-0.3.1-sources.jar",
+          "url": "kawa-mixin-annotations-0.3.1-sources.jar",
+          "size": 1995,
+          "sha512": "6608c9e9158180405365c54e8bc8bd746937c683090e9d451d76c5b654c2d0ad0b7aee6730cb4543e75ee348f43938078d03224dd390386aa50bfe0673ae89a4",
+          "sha256": "4f31e40879d6019897b3ca72e4d18c43be0e4af621b04a065f4b5583b35e25f8",
+          "sha1": "b2571023089753bd1a3e3ceb870e5c5bf681e557",
+          "md5": "62a3f33bb8dddd64876cca94bd2f31da"
+        }
+      ]
+    }
+  ]
+}
