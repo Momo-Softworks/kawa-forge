@@ -11,7 +11,18 @@
 ;;; at consumer compile time.
 
 (module-name (kawaforge mixin))
-(module-export define-mixin)
+(module-export define-mixin jstr)
+
+;; Force a string literal to compile as a plain JVM `ldc` constant instead of
+;; a Kawa pooled literal. Kawa pools Scheme string literals as static fields
+;; on the module class (initialized in its <clinit>), and Sponge Mixin does
+;; not run that initialization from merged handler code — so (display "...")
+;; style literals break at runtime inside mixin handlers. Literals passed to
+;; String-typed Java APIs already compile to ldc; use (jstr "...") everywhere
+;; else, e.g. (display (jstr "hello")).
+(define-syntax jstr
+  (syntax-rules ()
+    ((_ s) (as java.lang.String s))))
 
 ;; These are zero-arg FUNCTIONS, not top-level constants, on purpose: when the
 ;; consumer module is compiled, this module's transformer runs before the

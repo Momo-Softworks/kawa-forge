@@ -23,7 +23,7 @@ public class KawaForgePlugin implements Plugin<Project> {
         PROVIDERS.add(new GenericClasspathProvider());
     }
 
-    private static final String ANNOTATIONS_VERSION = "0.3.0"; // keep in lockstep with the root project version until the plugin publishes both together
+    private static final String ANNOTATIONS_VERSION = "0.3.1"; // keep in lockstep with the root project version until the plugin publishes both together
 
     @Override
     public void apply(Project project) {

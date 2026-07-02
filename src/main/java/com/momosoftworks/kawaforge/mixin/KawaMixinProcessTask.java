@@ -67,6 +67,9 @@ public class KawaMixinProcessTask extends DefaultTask {
                             stats[0]++;
                             byte[] bytes = Files.readAllBytes(p);
                             byte[] processed = processor.process(bytes);
+                            for (String warning : processor.warnings()) {
+                                getLogger().warn("Kawa Mixin: {}", warning);
+                            }
                             Files.write(target, processed != null ? processed : bytes);
                             if (processed != null) stats[1]++;
                         } else {

@@ -15,6 +15,15 @@ path by `compileKawa` automatically.
 
 ## 2. Surface
 
+The mixin name may be a simple symbol (class lands in the module's package) or
+a **fully-qualified** dotted name — the canonical style, since the module class
+must live outside the mixin package (see quickstart §2) while the mixin classes
+live inside it. The DSL module also exports `(jstr "...")`, which forces a
+string literal to compile as a plain JVM `ldc` constant; required when passing
+literals to Scheme functions (`display`, `format`) inside handler bodies, since
+Kawa's pooled literals live on the module class and Sponge Mixin will not run
+its initializer from merged code.
+
 ```scheme
 (define-mixin MixinMinecraft
   ;; ---- class clauses ----

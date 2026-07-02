@@ -27,7 +27,7 @@ pluginManagement {
 
 ```groovy
 plugins {
-    id 'com.momosoftworks.kawa-forge' version '0.3.0'
+    id 'com.momosoftworks.kawa-forge' version '0.3.1'
 }
 
 // No extra repositories needed: the plugin auto-adds its own maven repo for
@@ -55,31 +55,41 @@ dependencies {
 
 ## 2. The mixin, in Scheme
 
-`src/main/scheme/com/example/mymod/mixin/mixins.scm`:
+`src/main/scheme/com/example/mymod/mixins.scm`:
 
 ```scheme
-;; IMPORTANT: the module name must NOT equal any mixin class name. If they
-;; match, Kawa merges its module machinery (static initializer, Runnable)
-;; into the mixin class, which Sponge Mixin will not accept. With a distinct
-;; module name the mixin class compiles clean (constructor only) and the
-;; module machinery lands in a separate, inert class.
-(module-name com.example.mymod.mixin.mixins)
+;; IMPORTANT — two rules for the module name:
+;;  1. It must NOT equal any mixin class name (or Kawa merges its module
+;;     machinery — static initializer, Runnable — into the mixin class,
+;;     which Sponge Mixin will not accept).
+;;  2. It must live OUTSIDE the mixin package (Mixin restricts normal
+;;     classloading from packages that contain mixins; the module class is
+;;     loaded normally).
+;; Give mixin classes fully-qualified names to place them in the mixin
+;; package while the module lives elsewhere.
+(module-name com.example.mymod.MixinModule)
 (import (kawaforge mixin))
 
-(define-mixin MixinMinecraft
+(define-mixin com.example.mymod.mixin.MixinMinecraft
   (target "net.minecraft.client.Minecraft")
 
   (inject onStartGame
       ((ci :: org.spongepowered.asm.mixin.injection.callback.CallbackInfo))
     (method "startGame")
     (at "HEAD")
-    (display ">>> KAWA MIXIN WORKS <<<")
-    (newline)))
+    (java.lang.System:out:println ">>> KAWA MIXIN WORKS <<<")))
 ```
 
 Notes:
 - `(import (kawaforge mixin))` — the DSL ships with the plugin; nothing to add.
 - Handler parameters **must** be typed (`:: Type`); the macro errors otherwise.
+- **String literals in handler bodies**: literals passed to String-typed Java
+  APIs (like `println` above) compile to plain JVM constants and are safe.
+  Literals consumed by Scheme functions — `(display "...")`, `(format ...)` —
+  are pooled by Kawa as static fields on the *module* class, whose initializer
+  Sponge Mixin will not run from merged code: **they break at runtime**. Wrap
+  those with the DSL's `(jstr "...")`, e.g. `(display (jstr "hello"))`. The
+  build prints a warning whenever a handler references a pooled literal.
 - More surface (INVOKE points, `shift`, `cancellable`, `shadow-field`,
   `unique`, `@Mixin` passthroughs like `priority`): see
   [`mixin-dsl-spec.md`](mixin-dsl-spec.md). Anything the DSL doesn't cover yet
@@ -135,7 +145,14 @@ The compile-time side above is fully automated and tested. Getting Mixin to
 *load* the config at runtime is the same as for any Java mixin mod on 1.7.10
 and depends on your environment:
 
-- **UniMixins-based packs (GTNH-style)**: ship UniMixins as usual and register
+- **GTNH ExampleMod template (known-working reference: Momo-Softworks/Patina)**:
+  set `usesMixins = true` and `mixinsPackage = <your mixin package>` in
+  `gradle.properties` and let the template's convention plugin handle the
+  UniMixins bootstrap. Align the generated config name with the template's
+  expectation: `kawa { mixin { configName = "mixins.<modId>.json" } }`.
+  Note (from Patina's README): don't use IntelliJ's native "Run Client" — it
+  does not pick up compiled Kawa resources; use the Gradle run task.
+- **Other UniMixins-based packs**: ship UniMixins as usual and register
   the config the way your other mixin mods do.
 - **Plain LaunchWrapper**: the classic route is jar manifest attributes —
   `TweakClass: org.spongepowered.asm.launch.MixinTweaker` and
@@ -168,7 +185,7 @@ Clone the repo, `./gradlew publishToMavenLocal` (JDK 17+; on Guix:
 `guix shell -m manifest.scm`), and put `mavenLocal()` first in the consumer's
 `pluginManagement` repositories.
 
-## Known limitations (v0.3.0)
+## Known limitations (v0.3.1)
 
 - Dev-environment (MCP names) only — **no refmap/SRG remapping yet**, so
   production/obfuscated environments won't remap targets. Phase 2.

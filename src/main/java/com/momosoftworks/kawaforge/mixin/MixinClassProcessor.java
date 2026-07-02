@@ -8,6 +8,7 @@ import java.util.*;
 
 public final class MixinClassProcessor {
     private final Normalizer normalizer;
+    private final List<String> warnings = new ArrayList<>();
     private static final String CARRIER_CLASS = "Lcom/momosoftworks/kawaforge/mixin/KawaMixinMeta;";
     private static final String CARRIER_MEMBER = "Lcom/momosoftworks/kawaforge/mixin/KawaMemberMeta;";
 
@@ -16,12 +17,23 @@ public final class MixinClassProcessor {
         this.normalizer = new Normalizer(reader);
     }
 
+    /**
+     * Warnings collected by the most recent {@link #process} call (empty when
+     * the class was carrier-free or clean). Currently: references to Kawa
+     * pooled literals, which Sponge Mixin cannot merge safely.
+     */
+    public List<String> warnings() {
+        return new ArrayList<>(warnings);
+    }
+
     public byte[] process(byte[] classBytes) {
+        warnings.clear();
         ClassReader cr = new ClassReader(classBytes);
         String className = cr.getClassName();
         ClassWriter cw = new ClassWriter(0);
         
         final boolean[] sawCarrier = {false};
+        final List<String> literalRefs = new ArrayList<>();
         
         ClassVisitor cv = new ClassVisitor(Opcodes.ASM9, cw) {
             @Override
@@ -45,6 +57,25 @@ public final class MixinClassProcessor {
                         }
                         return super.visitAnnotation(desc, vis);
                     }
+
+                    @Override
+                    public void visitFieldInsn(int opcode, String owner, String fieldName, String fieldDesc) {
+                        // Kawa pools Scheme literals (e.g. (display "...")) as
+                        // static Lit* fields of gnu.* types on the module
+                        // class, initialized in its <clinit>. Sponge Mixin
+                        // does not run that initialization chain reliably from
+                        // merged handler code, so such references break at
+                        // runtime. String literals passed to String-typed Java
+                        // APIs (or wrapped in the DSL's (jstr "...")) compile
+                        // to plain ldc constants and are safe.
+                        if (opcode == Opcodes.GETSTATIC
+                                && (fieldDesc.startsWith("Lgnu/") || fieldName.matches("Lit\\d+"))) {
+                            literalRefs.add(className.replace('/', '.') + "." + name
+                                + " references Kawa pooled literal " + owner.replace('/', '.')
+                                + "." + fieldName + " (" + fieldDesc + ")");
+                        }
+                        super.visitFieldInsn(opcode, owner, fieldName, fieldDesc);
+                    }
                 };
             }
 
@@ -65,6 +96,13 @@ public final class MixinClassProcessor {
         };
 
         cr.accept(cv, 0);
+        if (sawCarrier[0] && !literalRefs.isEmpty()) {
+            for (String ref : literalRefs) {
+                warnings.add(ref + " — Kawa pooled literals are initialized in the module's <clinit>,"
+                    + " which Sponge Mixin will not run from merged code. Pass string literals to"
+                    + " String-typed Java APIs or wrap them with (jstr \"...\").");
+            }
+        }
         return sawCarrier[0] ? cw.toByteArray() : null;
     }
 
