@@ -13,6 +13,7 @@ import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,6 +26,8 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Compiles a consumer fixture that uses (import (kawaforge mixin)) +
@@ -44,23 +47,27 @@ class DefineMixinMacroTest {
     @TempDir
     Path tmp;
 
+    private static Path dslClasses;
+    private static Path annotationClasses;
+
     @BeforeAll
-    static void requireKawa() {
+    static void requireKawa() throws Exception {
         KawaTestHarness.assumeAvailable();
+        
+        // Precompile the DSL module once for all tests.
+        Path dslWork = Files.createTempDirectory("dsl-precompile");
+        String dslSource = new String(
+            Files.readAllBytes(Paths.get("src/main/resources/kawaforge/mixin.scm")),
+            StandardCharsets.UTF_8);
+        dslClasses = KawaTestHarness.compile(dslWork, "mixin.scm", dslSource,
+            Arrays.asList());
+        
+        annotationClasses = codeSource(KawaMixinMeta.class);
     }
 
     @Test
     void defineMixinExpandsToSpecifiedCarriers() throws Exception {
-        // 1. Precompile the DSL module exactly as the plugin will.
-        Path dslWork = Files.createDirectories(tmp.resolve("dsl"));
-        String dslSource = new String(
-            Files.readAllBytes(Paths.get("src/main/resources/kawaforge/mixin.scm")),
-            StandardCharsets.UTF_8);
-        Path dslClasses = KawaTestHarness.compile(dslWork, "mixin.scm", dslSource,
-            Arrays.asList());
-
         // 2. Compile the consumer fixture with annotations + DSL on the classpath.
-        Path annotationClasses = codeSource(KawaMixinMeta.class);
         String consumer =
             "(import (kawaforge mixin))\n"
             + "(define-mixin MixinMinecraft\n"
@@ -116,6 +123,77 @@ class DefineMixinMacroTest {
 
         assertEquals(ann("Shadow"), parseOne(c.memberPayloads.get("counter")));
         assertEquals(ann("Unique"), parseOne(c.memberPayloads.get("helper")));
+    }
+
+    @Test
+    void multiTargetAggregation() throws Exception {
+        String consumer = "(import (kawaforge mixin))\n"
+                       + "(define-mixin MultiTarget (target \"a.B\") (target \"c.D\"))\n";
+        Path consumerWork = Files.createDirectories(tmp.resolve("multi-target"));
+        Path out = KawaTestHarness.compile(consumerWork, "consumer.scm", consumer,
+            Arrays.asList(annotationClasses, dslClasses));
+
+        Carriers c = readCarriers(Files.readAllBytes(out.resolve("MultiTarget.class")));
+        assertNotNull(c.classPayload);
+        assertEquals(
+            ann("Mixin", 
+                m("targets", new com.momosoftworks.kawaforge.mixin.meta.VArray(Arrays.asList(new VPrim("a.B"), new VPrim("c.D"))))),
+            parseOne(c.classPayload));
+    }
+
+    @Test
+    void missingMethodClauseFails() throws IOException {
+        String consumer = "(import (kawaforge mixin))\n"
+                        + "(define-mixin Fail (target \"a.B\")\n"
+                        + "  (inject h ((ci :: java.lang.Object)) (at \"HEAD\") #!void))\n";
+        Path consumerWork = Files.createDirectories(tmp.resolve("fail-method"));
+        IOException ex = assertThrows(IOException.class, () -> 
+            KawaTestHarness.compile(consumerWork, "consumer.scm", consumer, 
+                Arrays.asList(annotationClasses, dslClasses)));
+        String msg = ex.getMessage();
+        assertTrue(msg.contains("define-mixin") && msg.contains("method"), 
+            "Expected error message to contain 'define-mixin' and 'method', got: " + msg);
+    }
+
+    @Test
+    void missingAtClauseFails() throws IOException {
+        String consumer = "(import (kawaforge mixin))\n"
+                        + "(define-mixin Fail (target \"a.B\")\n"
+                        + "  (inject h ((ci :: java.lang.Object)) (method \"m\") #!void))\n";
+        Path consumerWork = Files.createDirectories(tmp.resolve("fail-at"));
+        IOException ex = assertThrows(IOException.class, () -> 
+            KawaTestHarness.compile(consumerWork, "consumer.scm", consumer, 
+                Arrays.asList(annotationClasses, dslClasses)));
+        String msg = ex.getMessage();
+        assertTrue(msg.contains("define-mixin") && msg.contains("at"), 
+            "Expected error message to contain 'define-mixin' and 'at', got: " + msg);
+    }
+
+    @Test
+    void untypedParamFails() throws IOException {
+        String consumer = "(import (kawaforge mixin))\n"
+                        + "(define-mixin Fail (target \"a.B\")\n"
+                        + "  (inject h ((ci)) (method \"m\") (at \"HEAD\") #!void))\n";
+        Path consumerWork = Files.createDirectories(tmp.resolve("fail-param"));
+        IOException ex = assertThrows(IOException.class, () -> 
+            KawaTestHarness.compile(consumerWork, "consumer.scm", consumer, 
+                Arrays.asList(annotationClasses, dslClasses)));
+        String msg = ex.getMessage();
+        assertTrue(msg.contains("define-mixin") && msg.contains("parameter"), 
+            "Expected error message to contain 'define-mixin' and 'parameter', got: " + msg);
+    }
+
+    @Test
+    void noTargetFails() throws IOException {
+        String consumer = "(import (kawaforge mixin))\n"
+                        + "(define-mixin NoTarget (priority 1))\n";
+        Path consumerWork = Files.createDirectories(tmp.resolve("fail-target"));
+        IOException ex = assertThrows(IOException.class, () -> 
+            KawaTestHarness.compile(consumerWork, "consumer.scm", consumer, 
+                Arrays.asList(annotationClasses, dslClasses)));
+        String msg = ex.getMessage();
+        assertTrue(msg.contains("define-mixin") && msg.contains("target"), 
+            "Expected error message to contain 'define-mixin' and 'target', got: " + msg);
     }
 
     // ---- helpers ----
